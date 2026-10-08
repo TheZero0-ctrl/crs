@@ -101,6 +101,7 @@ function render() {
         <section class="visual-panel" aria-label="Interactive visualization">
           <div class="visual-toolbar"><span class="visual-title">${isMap ? 'EPSG:5186' : 'EARTH'}</span><div class="toolbar-controls">${!isMap ? '<button class="compact-button" id="view-toggle" aria-pressed="false">Flat map</button>' : ''}<button class="compact-button" id="face">Center</button><button class="compact-button" id="reset-point">Reset</button></div></div>
           <div class="visual-stage ${isMap ? 'map-stage' : ''}" id="visual">${isMap ? '<div class="map-loading">Preparing the projected grid…</div>' : ''}</div>
+          ${!isMap ? '<div id="measurements" class="angle-diagrams" aria-label="Coordinate angle measurements"></div>' : ''}
           <div class="visual-caption"><span><i class="legend-dot teal"></i>${isMap ? 'Central-belt extent' : 'Latitude / parallel'}</span><span><i class="legend-dot orange"></i>${isMap ? '127°E / central meridian' : 'Longitude / meridian'}</span><span class="map-credit">Natural Earth · ${isMap ? 'EPSG:5186' : 'Spherical illustration'}</span></div>
           <div class="try-this"><span class="try-symbol">↳</span><p>${step().prompt}</p></div>
           <div class="visual-settings">
@@ -129,7 +130,7 @@ function render() {
       </div>
       <div class="takeaway"><span class="eyebrow">KEY IDEA</span><p>${step().takeaway}</p></div>
       ${current.id === 'lab' && stepIndex === 2 ? '<section class="experiment"><div><h2>A deliberate mistake</h2><p>What if we interpret longitude and latitude numbers as easting and northing in metres?</p><p id="relabel-result"></p></div><button class="secondary-button" id="relabel">Try relabelling</button></section>' : ''}
-      <details class="technical"><summary>Details <span>+</span></summary><p>${step().detail}</p>${current.id === 'epsg' || current.id === 'korea' ? definitionMarkup(isMap) : ''}</details>
+      <section class="technical" aria-label="Lesson details"><h2>Details</h2><p>${step().detail}</p>${current.id === 'epsg' || current.id === 'korea' ? definitionMarkup(isMap) : ''}</section>
       </div>
       <section class="knowledge-check" id="knowledge-check" ${showQuiz ? '' : 'hidden'} aria-label="Chapter knowledge check"><h1>Knowledge check</h1><h2>${current.quiz.question}</h2><div class="answer-options">${current.quiz.options.map((answer, i) => `<button class="answer-button ${quizChoice === i ? (i === current.quiz.answer ? 'correct' : 'incorrect') : ''}" data-answer="${i}"><span>${String.fromCharCode(65 + i)}</span>${answer}</button>`).join('')}</div><p id="quiz-feedback" class="quiz-feedback" role="status">${quizChoice === null ? 'Choose an answer. You can try again.' : (quizChoice === current.quiz.answer ? 'Correct. ' : 'Not quite. ') + current.quiz.explanation}</p></section>
       <footer class="lesson-footer" aria-label="Lesson navigation"><button class="back-button" id="back" ${!showQuiz && lessonIndex === 0 && stepIndex === 0 ? 'disabled' : ''}>← Previous</button><span class="footer-position">${showQuiz ? 'Knowledge check' : `Step ${stepIndex + 1} of ${current.steps.length}`}</span><button class="next-button" id="next" ${showQuiz && quizChoice !== current.quiz.answer ? 'disabled aria-describedby="quiz-feedback"' : ''}>${nextLabel()} ${arrow}</button></footer>
@@ -146,7 +147,7 @@ function render() {
   }
   if (showQuiz) return;
   updateReadouts();
-  if (!isMap) worldView = mountWorld(select('#visual'), point, options, setPoint);
+  if (!isMap) worldView = mountWorld(select('#visual'), point, options, setPoint, select('#measurements'));
   else {
     import('./visuals/korea-map').then(({ mountKoreaMap }) => {
       if (generation !== mountGeneration) return;

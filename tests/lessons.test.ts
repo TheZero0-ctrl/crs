@@ -24,6 +24,7 @@ describe('guided learning flow', () => {
     input('#latitude-range', '60');
     document.querySelector('#latitude-range')!.dispatchEvent(new Event('input', { bubbles: true }));
     expect((document.querySelector('#latitude') as HTMLInputElement).value).toBe('60.000000');
+    expect(document.querySelector('.angle-measurement.latitude output')?.textContent).toBe('60.00°N');
   });
   it('selects worldwide locations in globe lessons and uses regional presets for EPSG:5186', () => {
     input('#preset', 'Sydney');

@@ -3,6 +3,7 @@ import type { GeoProjection } from 'd3-geo';
 import type { LineString } from 'geojson';
 import { world } from '../geo/world';
 import type { GeographicPoint } from '../geo/coordinates';
+import { measurementDiagrams } from './angle-measurements';
 
 export type WorldOptions = {
   flat: boolean; projection: string; circles: boolean; ellipsoid: boolean; grid: boolean;
@@ -10,7 +11,7 @@ export type WorldOptions = {
 };
 export type WorldView = { update: (point: GeographicPoint, options: WorldOptions) => void; center: () => void; dispose: () => void };
 
-export function mountWorld(host: HTMLElement, initial: GeographicPoint, initialOptions: WorldOptions, onPoint: (point: GeographicPoint) => void): WorldView {
+export function mountWorld(host: HTMLElement, initial: GeographicPoint, initialOptions: WorldOptions, onPoint: (point: GeographicPoint) => void, measurementHost?: HTMLElement): WorldView {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 900 460');
   svg.setAttribute('role', 'img');
@@ -25,6 +26,12 @@ export function mountWorld(host: HTMLElement, initial: GeographicPoint, initialO
 
   const pathElement = (d: string | null, className: string, extra = '') => `<path d="${d ?? ''}" class="${className}" ${extra}/>`;
   function draw() {
+    svg.setAttribute('viewBox', options.flat ? '0 0 900 460' : '200 0 500 460');
+    if (measurementHost) {
+      measurementHost.hidden = options.flat;
+      measurementHost.classList.toggle('single-measurement', options.emphasis !== 'both');
+      if (!options.flat) measurementHost.innerHTML = measurementDiagrams(point, options.emphasis);
+    }
     if (options.flat) {
       projection = (options.projection === 'mercator' ? geoMercator().clipExtent([[35, 35], [865, 425]]) : options.projection === 'equirectangular' ? geoEquirectangular() : geoEqualEarth());
       projection.fitExtent([[42, 36], [858, 420]], { type: 'Sphere' });
@@ -44,8 +51,8 @@ export function mountWorld(host: HTMLElement, initial: GeographicPoint, initialO
       <radialGradient id="ocean" cx="34%" cy="25%" r="80%"><stop offset="0" stop-color="#ebf3ed"/><stop offset=".7" stop-color="#dce9e2"/><stop offset="1" stop-color="#b4ccc0"/></radialGradient>
       <radialGradient id="globeShade" cx="30%" cy="20%" r="85%"><stop offset=".6" stop-color="#123c35" stop-opacity="0"/><stop offset="1" stop-color="#123c35" stop-opacity=".16"/></radialGradient>
     </defs>
-    <text x="30" y="34" class="plot-label">${options.flat ? 'PLANAR VIEW' : 'SPHERICAL VIEW'}</text>
-    <text x="870" y="34" text-anchor="end" class="plot-label">${options.flat ? options.projection.toUpperCase() : ellipsoid ? 'FLATTENING EXAGGERATED' : 'N ↑'}</text>
+    <text x="${options.flat ? 30 : 220}" y="30" class="plot-label">${options.flat ? 'PLANAR VIEW' : 'SPHERICAL VIEW'}</text>
+    <text x="${options.flat ? 870 : 680}" y="30" text-anchor="end" class="plot-label">${options.flat ? options.projection.toUpperCase() : ellipsoid ? 'FLATTENING EXAGGERATED' : ''}</text>
     <g ${ellipsoid ? 'transform="translate(0 229) scale(1 .86) translate(0 -229)"' : ''}>
       ${!options.flat ? '<ellipse cx="450" cy="431" rx="128" ry="6" fill="#233936" opacity=".045"/>' : ''}
       ${pathElement(path({ type: 'Sphere' }), 'ocean', options.flat ? '' : 'fill="url(#ocean)"')}
@@ -59,9 +66,8 @@ export function mountWorld(host: HTMLElement, initial: GeographicPoint, initialO
       ${!options.flat ? pathElement(path({ type: 'Sphere' }), 'shade', 'fill="url(#globeShade)"') : ''}
       ${marker}
     </g>
-    ${!options.flat ? `<path d="M226 169h-32v112h32" class="annotation-line"/><text x="181" y="224" text-anchor="end" class="diagram-caption">${point.latitude.toFixed(2)}°</text><text x="181" y="244" text-anchor="end" class="diagram-small">LATITUDE</text><path d="M667 302h40v-85h-40" class="annotation-line"/><text x="720" y="254" class="diagram-caption">${point.longitude.toFixed(2)}°</text><text x="720" y="274" class="diagram-small">LONGITUDE</text>` : ''}
-    <text x="30" y="442" class="diagram-small">${options.flat ? 'Click to locate a point' : 'Drag to rotate · Click to locate a point'}</text>
-    <text x="870" y="442" text-anchor="end" class="diagram-small">${!visible ? 'Point is on the far side. Use Center.' : 'Spherical illustration'}</text>`;
+    <text x="${options.flat ? 30 : 220}" y="448" class="diagram-small">${options.flat ? 'Click to locate a point' : 'Drag to rotate · Click to locate a point'}</text>
+    <text x="${options.flat ? 870 : 680}" y="448" text-anchor="end" class="diagram-small">${!visible ? 'Far side · use Center' : ''}</text>`;
   }
 
   function position(event: PointerEvent): [number, number] {
@@ -107,6 +113,6 @@ export function mountWorld(host: HTMLElement, initial: GeographicPoint, initialO
   return {
     update(nextPoint, nextOptions) { point = nextPoint; options = nextOptions; draw(); },
     center() { rotation = [-point.longitude, -point.latitude]; draw(); },
-    dispose() { svg.remove(); },
+    dispose() { svg.remove(); if (measurementHost) measurementHost.innerHTML = ''; },
   };
 }

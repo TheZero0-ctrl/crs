@@ -45,4 +45,27 @@ main{padding-bottom:110px}
 @media(max-width:900px){:root{--sidebar-width:0px}.sidebar{position:static;max-height:none;overflow:visible}.topic-outline{display:none}.chapter-group{min-width:130px;scroll-snap-align:start}.mobile-topics{display:flex;align-items:center;gap:12px;margin-top:20px}.mobile-topics>span{font-size:11px;color:var(--muted)}.mobile-topics select{flex:1;min-width:0;min-height:44px}.lesson-footer{left:0;right:0;padding-left:24px;padding-right:24px}}
 @media(max-width:650px){main{padding-bottom:110px}.lesson-intro{flex-wrap:wrap;gap:10px}.step-position{padding-top:0}.mobile-topics{gap:9px}.mobile-topics select{font-size:14px}.lesson-footer{padding-left:max(18px,env(safe-area-inset-left));padding-right:max(18px,env(safe-area-inset-right));gap:8px}.lesson-footer .next-button{font-size:11px;padding:11px 12px;gap:8px}.lesson-footer .back-button{font-size:11px}.footer-position{font-size:9px;max-width:90px;line-height:1.5}.knowledge-check{padding:20px}.knowledge-check h1{font-size:26px}}
 @media(pointer:coarse){.mobile-topics select{font-size:16px}}
+.technical>h2{font-size:12px;letter-spacing:0;font-weight:500;margin:18px 0 12px;color:var(--muted)}
+.angle-diagrams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border-top:1px solid #e5e9df;background:var(--panel)}
+.angle-measurement{margin:0;padding:16px 18px 14px;min-width:0;--angle-color:var(--teal)}
+.angle-measurement.longitude{--angle-color:var(--orange)}
+.angle-measurement+figure{border-left:1px solid #e5e9df}
+.angle-measurement figcaption{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px}
+.angle-measurement figcaption strong{font-weight:500}
+.angle-measurement output{font-family:var(--mono);color:var(--angle-color);font-size:14px}
+.angle-measurement svg{width:100%;height:175px;margin:8px 0}
+.measurement-earth{fill:#edf3e9;stroke:#aabfb2;stroke-width:1.2}
+.measurement-reference{fill:none;stroke:#829585;stroke-width:1.2;stroke-dasharray:4 3}
+.measurement-ray{fill:none;stroke:var(--angle-color);stroke-width:1.7}
+.measurement-arc{fill:none;stroke:var(--angle-color);stroke-width:2.2}
+.measurement-center{fill:var(--ink)}
+.measurement-point{fill:var(--angle-color);stroke:var(--panel);stroke-width:1.5}
+.measurement-label{font-family:'DM Sans',sans-serif;font-size:11px;fill:#687164}
+.angle-measurement p{font-size:10px;line-height:1.7;color:var(--muted);margin:0}
+.single-measurement{grid-template-columns:1fr}
+.single-measurement .angle-measurement{display:grid;grid-template-columns:minmax(120px,1fr) minmax(180px,1.4fr);gap:0 15px;align-items:center}
+.single-measurement figcaption{grid-column:1;align-self:end}
+.single-measurement svg{grid-column:2;grid-row:1/3;height:180px;margin:0}
+.single-measurement p{grid-column:1;align-self:start;margin-top:12px}
+@media(max-width:650px){.angle-diagrams{grid-template-columns:1fr}.angle-measurement{padding:16px 18px}.angle-measurement+figure{border-left:0;border-top:1px solid #e5e9df}.angle-measurement svg{height:190px}.angle-measurement p{font-size:11px}.single-measurement .angle-measurement{display:block}.single-measurement svg{height:190px;margin:8px 0}.single-measurement p{margin-top:0}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
