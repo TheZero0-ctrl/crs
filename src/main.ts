@@ -6,6 +6,9 @@ import '@fontsource/dm-mono/latin-400.css';
 import './styles.css';
 import { lessons, sources, videos } from './lessons';
 import { topicLabels, safeIndex, normalizePositions, resolvePosition, type LessonPositions } from './navigation';
+import { lessonVisuals } from './lesson-visuals';
+import { conceptDiagram } from './visuals/concept-diagrams';
+import { relabelledLocation } from './geo/diagram-math';
 import { presets, worldPresets, to5186, from5186, within5186Area, axisTuple, degreeLongitudeKm, parseCoordinate, validateGeographic, number, readSaved, save, type GeographicPoint } from './geo/coordinates';
 import { mountWorld, type WorldView, type WorldOptions } from './visuals/world-view';
 import type { KoreaMap } from './visuals/korea-map';
@@ -13,6 +16,8 @@ import research from '../docs/epsg-4326-and-5186-resources.md?raw';
 import article from '../docs/coordinate-reference-systems.md?raw';
 import plan from '../docs/build-plan.md?raw';
 import attribution from '../docs/README.md?raw';
+import courseReview from '../docs/course-review.md?raw';
+import implementation from '../docs/implementation.md?raw';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const url = new URL(location.href);
@@ -35,9 +40,10 @@ const quizAnswers: Record<string, number> = {};
 let worldView: WorldView | undefined;
 let koreaMap: KoreaMap | undefined;
 let mountGeneration = 0;
-let options: WorldOptions = { flat: false, projection: 'equal-earth', circles: false, ellipsoid: false, grid: true, emphasis: 'both' };
+let options: WorldOptions = { flat: false, projection: 'equal-earth', circles: false, ellipsoid: false, grid: true, emphasis: 'both', focus: 'location' };
+let configuredTopic = '';
 let relabelOriginal: GeographicPoint | null = null;
-const docs = { research: { name: 'EPSG research & resources', text: research }, article: { name: 'QGIS article extraction', text: article }, plan: { name: 'Build plan & design', text: plan }, attribution: { name: 'Sources & attribution', text: attribution } };
+const docs = { research: { name: 'EPSG research & resources', text: research }, article: { name: 'QGIS article extraction', text: article }, plan: { name: 'Build plan & design', text: plan }, review: { name: 'Course review & visual plan', text: courseReview }, implementation: { name: 'Implementation & verification', text: implementation }, attribution: { name: 'Sources & attribution', text: attribution } };
 
 const arrow = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const logo = '<svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><circle cx="20" cy="20" r="16"/><ellipse cx="20" cy="20" rx="7" ry="16"/><ellipse cx="20" cy="20" rx="16" ry="6"/><path d="M4 20h32M20 4v32"/><circle cx="29" cy="13" r="3" class="logo-dot"/></svg>';
@@ -46,6 +52,8 @@ const lesson = () => lessons[lessonIndex];
 const step = () => lesson().steps[stepIndex];
 const availablePresets = () => lesson().mode === 'map' ? presets : worldPresets;
 const defaultPoint = () => lesson().mode === 'map' ? presets.Seoul : worldPresets.Greenwich;
+const visual = () => lessonVisuals[lesson().id][stepIndex];
+const mapOptions = () => ({ grid: options.grid, offsets: showOffsets, focus: options.focus, official: axisOfficial, comparison: relabelOriginal });
 
 function persist() {
   positions[lesson().id] = { step: stepIndex, quiz: showQuiz };
@@ -62,9 +70,19 @@ function syncUrl() {
   try { history.replaceState(null, '', next); } catch { /* Embedded previews may restrict history. */ }
 }
 function configure() {
-  options.flat = lesson().mode === 'projection' || (lesson().id === 'foundations' && stepIndex === 4);
-  options.ellipsoid = lesson().id === 'foundations' && stepIndex === 3;
-  options.emphasis = lesson().id === 'foundations' && stepIndex === 1 ? 'latitude' : lesson().id === 'foundations' && stepIndex === 2 ? 'longitude' : 'both';
+  const topic = `${lesson().id}/${stepIndex}`;
+  const focus = visual();
+  options.focus = focus.focus;
+  options.emphasis = focus.focus === 'latitude' ? 'latitude' : focus.focus === 'longitude' ? 'longitude' : 'both';
+  if (configuredTopic !== topic) {
+    options.flat = focus.flat ?? false;
+    options.ellipsoid = focus.ellipsoid ?? false;
+    options.circles = focus.circles ?? false;
+    if (focus.focus === 'spacing') options.projection = 'equirectangular';
+    if (focus.focus === 'choice' || focus.focus === 'distortion') options.projection = 'equal-earth';
+    if (focus.focus === 'origin') { point = { ...presets['Natural origin'] }; showOffsets = true; }
+    configuredTopic = topic;
+  }
   if (lesson().mode === 'map') {
     try { to5186(point); } catch { point = { ...presets.Seoul }; }
   }
@@ -72,6 +90,12 @@ function configure() {
 
 function topicOutline() {
   return `<ol class="topic-outline" aria-label="${lesson().name} topics">${lesson().steps.map((s, i) => `<li><button class="topic-button ${!showQuiz && i === stepIndex ? 'active' : ''}" data-step="${i}" title="${s.title}" ${!showQuiz && i === stepIndex ? 'aria-current="step"' : ''}><span class="topic-number">${i + 1}</span>${topicLabels[lesson().id][i]}</button></li>`).join('')}<li><button class="topic-button quiz-topic ${showQuiz ? 'active' : ''}" data-quiz ${showQuiz ? 'aria-current="step"' : ''}><span class="topic-number">${completed.has(lesson().id) ? '✓' : '?'}</span>Knowledge check</button></li></ol>`;
+}
+
+function diagramLegend() {
+  const focus = options.focus;
+  const items = focus === 'assign' ? [['teal', 'Correct location'], ['orange', 'Relabelled location']] : focus === 'origin' ? [['orange', 'Easting difference'], ['teal', 'Northing difference']] : focus === 'latitude' ? [['teal', 'Equator / latitude']] : focus === 'longitude' ? [['orange', 'Greenwich / longitude']] : focus === 'datum' ? [['neutral', 'Sphere outline'], ['teal', 'Exaggerated ellipsoid']] : focus === 'spacing' ? [['orange', '1° longitude interval']] : ['distortion', 'choice'].includes(focus) ? [['orange', 'Distortion circles']] : lesson().mode === 'map' ? [['teal', 'Central-belt extent'], ['orange', '127°E meridian']] : [['teal', 'Latitude'], ['orange', 'Longitude']];
+  return items.map(([color, label]) => `<span><i class="legend-dot ${color}"></i>${label}</span>`).join('');
 }
 
 function render() {
@@ -98,11 +122,13 @@ function render() {
       <div class="lesson-content" ${showQuiz ? 'hidden' : ''}>
       <div class="lesson-intro"><div><h1>${step().title}</h1><p>${step().body}</p></div><span class="step-position">Step ${stepIndex + 1} of ${current.steps.length}</span></div>
       <div class="workspace">
-        <section class="visual-panel" aria-label="Interactive visualization">
+        <section class="visual-panel" aria-label="Interactive visualization" data-focus="${visual().focus}">
           <div class="visual-toolbar"><span class="visual-title">${isMap ? 'EPSG:5186' : 'EARTH'}</span><div class="toolbar-controls">${!isMap ? '<button class="compact-button" id="view-toggle" aria-pressed="false">Flat map</button>' : ''}<button class="compact-button" id="face">Center</button><button class="compact-button" id="reset-point">Reset</button></div></div>
+          <div class="diagram-focus"><strong>${visual().label}</strong><p>${visual().cue}</p></div>
           <div class="visual-stage ${isMap ? 'map-stage' : ''}" id="visual">${isMap ? '<div class="map-loading">Preparing the projected grid…</div>' : ''}</div>
           ${!isMap ? '<div id="measurements" class="angle-diagrams" aria-label="Coordinate angle measurements"></div>' : ''}
-          <div class="visual-caption"><span><i class="legend-dot teal"></i>${isMap ? 'Central-belt extent' : 'Latitude / parallel'}</span><span><i class="legend-dot orange"></i>${isMap ? '127°E / central meridian' : 'Longitude / meridian'}</span><span class="map-credit">Natural Earth · ${isMap ? 'EPSG:5186' : 'Spherical illustration'}</span></div>
+          <div id="concept-diagram" class="concept-diagram" aria-label="Lesson concept diagram"></div>
+          <div class="visual-caption">${diagramLegend()}<span class="map-credit">Natural Earth · ${isMap ? 'EPSG:5186' : 'Spherical illustration'}</span></div>
           <div class="try-this"><span class="try-symbol">↳</span><p>${step().prompt}</p></div>
           <div class="visual-settings">
             <label class="check-label"><input type="checkbox" id="grid" ${options.grid ? 'checked' : ''}/> Show grid</label>
@@ -124,13 +150,13 @@ function render() {
           ${isMap ? `<form id="projected-form" class="coordinate-block projected-block"><div class="coordinate-heading"><strong>Projected</strong><span class="crs-badge">EPSG:5186</span></div><p class="coordinate-subtitle">KGD2002 / Central Belt 2010</p><label class="coordinate-field"><span>Easting <small>m</small></span><input id="easting" type="number" step="any" inputmode="decimal" required aria-label="Easting in metres"/></label><label class="coordinate-field"><span>Northing <small>m</small></span><input id="northing" type="number" step="any" inputmode="decimal" required aria-label="Northing in metres"/></label><button class="apply-button" type="submit">Locate ${arrow}</button><p id="area-note" class="area-note"></p></form>` : ''}
           <p id="input-error" class="input-error" role="alert" hidden></p>
           ${current.id === 'projections' && stepIndex === 1 ? '<div class="distance-box"><span>1° of longitude at this latitude</span><strong id="degree-distance"></strong><small>Along the WGS 84 parallel</small></div>' : ''}
-          ${current.id === 'epsg' || isMap ? `<div class="axis-box"><label class="check-label"><input id="axis-order" type="checkbox" ${axisOfficial ? 'checked' : ''}/> Official EPSG axis order</label><span class="tuple-label" id="tuple-label"></span><code id="geo-tuple"></code>${isMap ? '<span class="tuple-label" id="projected-tuple-label"></span><code id="projected-tuple"></code>' : ''}</div>` : ''}
+          ${current.id === 'epsg' || isMap ? `<div class="axis-box"><label class="check-label"><input id="axis-order" type="checkbox" ${axisOfficial ? 'checked' : ''}/> EPSG number order</label><span class="tuple-label" id="tuple-label"></span><code id="geo-tuple"></code>${isMap ? '<span class="tuple-label" id="projected-tuple-label"></span><code id="projected-tuple"></code>' : ''}</div>` : ''}
           ${current.id === 'korea' && stepIndex === 1 ? `<label class="check-label offsets-label"><input id="offsets" type="checkbox" ${showOffsets ? 'checked' : ''}/> Include false offsets</label><p class="offsets-note" id="offsets-note"></p>` : ''}
         </aside>
       </div>
       <div class="takeaway"><span class="eyebrow">KEY IDEA</span><p>${step().takeaway}</p></div>
       ${current.id === 'lab' && stepIndex === 2 ? '<section class="experiment"><div><h2>A deliberate mistake</h2><p>What if we interpret longitude and latitude numbers as easting and northing in metres?</p><p id="relabel-result"></p></div><button class="secondary-button" id="relabel">Try relabelling</button></section>' : ''}
-      <section class="technical" aria-label="Lesson details"><h2>Details</h2><p>${step().detail}</p>${current.id === 'epsg' || current.id === 'korea' ? definitionMarkup(isMap) : ''}</section>
+      <section class="technical" aria-label="Lesson details"><h2>Details</h2><p>${step().detail}</p>${step().terms ? `<dl class="lesson-terms">${step().terms!.map(item => `<div><dt>${item.term}</dt><dd>${item.meaning}</dd></div>`).join('')}</dl>` : ''}${current.id === 'epsg' || current.id === 'korea' ? definitionMarkup(isMap) : ''}</section>
       </div>
       <section class="knowledge-check" id="knowledge-check" ${showQuiz ? '' : 'hidden'} aria-label="Chapter knowledge check"><h1>Knowledge check</h1><h2>${current.quiz.question}</h2><div class="answer-options">${current.quiz.options.map((answer, i) => `<button class="answer-button ${quizChoice === i ? (i === current.quiz.answer ? 'correct' : 'incorrect') : ''}" data-answer="${i}"><span>${String.fromCharCode(65 + i)}</span>${answer}</button>`).join('')}</div><p id="quiz-feedback" class="quiz-feedback" role="status">${quizChoice === null ? 'Choose an answer. You can try again.' : (quizChoice === current.quiz.answer ? 'Correct. ' : 'Not quite. ') + current.quiz.explanation}</p></section>
       <footer class="lesson-footer" aria-label="Lesson navigation"><button class="back-button" id="back" ${!showQuiz && lessonIndex === 0 && stepIndex === 0 ? 'disabled' : ''}>← Previous</button><span class="footer-position">${showQuiz ? 'Knowledge check' : `Step ${stepIndex + 1} of ${current.steps.length}`}</span><button class="next-button" id="next" ${showQuiz && quizChoice !== current.quiz.answer ? 'disabled aria-describedby="quiz-feedback"' : ''}>${nextLabel()} ${arrow}</button></footer>
@@ -153,7 +179,7 @@ function render() {
       if (generation !== mountGeneration) return;
       select('#visual').innerHTML = '';
       koreaMap = mountKoreaMap(select('#visual'), point, setPoint);
-      koreaMap.update(point, options.grid, showOffsets);
+      koreaMap.update(point, mapOptions());
     }).catch(() => {
       if (generation === mountGeneration) select('#visual').innerHTML = '<p class="map-loading">The map could not load. The coordinate forms still work. Reload to retry.</p>';
     });
@@ -161,7 +187,7 @@ function render() {
 }
 
 function definitionMarkup(projected: boolean): string {
-  return `<dl class="definition-grid"><div><dt>Reference framework</dt><dd>${projected ? 'Korean Geodetic Datum 2002' : 'WGS 84 ensemble'}</dd></div><div><dt>Ellipsoid</dt><dd>${projected ? 'GRS 1980' : 'WGS 84'}</dd></div><div><dt>Coordinate axes</dt><dd>${projected ? 'Northing, easting' : 'Latitude, longitude'}</dd></div><div><dt>Units</dt><dd>${projected ? 'Metres' : 'Degrees'}</dd></div>${projected ? '<div><dt>Projection method</dt><dd>Transverse Mercator</dd></div><div><dt>Natural origin</dt><dd>38°N, 127°E</dd></div><div><dt>False offsets</dt><dd>E 200,000 m / N 600,000 m</dd></div><div><dt>Central scale factor</dt><dd>1</dd></div>' : '<div><dt>Map projection</dt><dd>None in the CRS definition</dd></div><div><dt>Area of use</dt><dd>World</dd></div>'}</dl>`;
+  return `<dl class="definition-grid"><div><dt>Earth reference</dt><dd>${projected ? 'KGD2002' : 'WGS 84'}</dd></div><div><dt>Earth-shape model</dt><dd>${projected ? 'GRS 1980' : 'WGS 84'}</dd></div><div><dt>Official coordinate names and order</dt><dd>${projected ? 'Northing first, easting second' : 'Latitude first, longitude second'}</dd></div><div><dt>Units</dt><dd>${projected ? 'Metres' : 'Degrees'}</dd></div>${projected ? '<div><dt>Map projection</dt><dd>Transverse Mercator</dd></div><div><dt>Starting point</dt><dd>38°N, 127°E</dd></div><div><dt>Numbers added to the coordinates</dt><dd>E 200,000 m / N 600,000 m</dd></div><div><dt>Scale factor on the middle line</dt><dd>1</dd></div>' : '<div><dt>Map projection</dt><dd>Not part of this coordinate system</dd></div><div><dt>Where it can be used</dt><dd>Worldwide</dd></div>'}</dl>`;
 }
 
 function nextLabel() {
@@ -179,7 +205,7 @@ function error(message = '') {
 }
 function updateVisual() {
   worldView?.update(point, options);
-  koreaMap?.update(point, options.grid, showOffsets);
+  koreaMap?.update(point, mapOptions());
   const toggle = app.querySelector<HTMLButtonElement>('#view-toggle');
   if (toggle) { toggle.textContent = options.flat ? 'Globe view' : 'Flat map'; toggle.setAttribute('aria-pressed', String(options.flat)); }
   const projectionControl = app.querySelector<HTMLElement>('#projection-wrap');
@@ -192,9 +218,12 @@ function setPoint(next: GeographicPoint) {
     validateGeographic(next);
     if (lesson().mode === 'map') to5186(next);
     point = next; error(); updateReadouts(); updateVisual(); syncUrl();
-  } catch (e) { error((e as Error).message); koreaMap?.update(point, options.grid, showOffsets); }
+  } catch (e) { error((e as Error).message); koreaMap?.update(point, mapOptions()); }
 }
 function updateReadouts() {
+  const concept = select<HTMLElement>('#concept-diagram');
+  concept.innerHTML = conceptDiagram({ point, focus: options.focus, projection: options.projection, official: axisOfficial, offsets: showOffsets, relabelOriginal });
+  concept.hidden = !concept.innerHTML;
   select<HTMLInputElement>('#latitude').value = point.latitude.toFixed(6);
   select<HTMLInputElement>('#longitude').value = point.longitude.toFixed(6);
   select<HTMLInputElement>('#latitude-range').value = String(point.latitude);
@@ -222,7 +251,7 @@ function updateReadouts() {
     if (offsetNote) offsetNote.textContent = showOffsets ? `With offsets: E ${number(p.easting)} m / N ${number(p.northing)} m` : `Without offsets: E ${number(p.easting - 200000)} m / N ${number(p.northing - 600000)} m. Explanatory values only; the registered CRS above is unchanged.`;
     const relabel = app.querySelector('#relabel-result');
     if (relabel) {
-      const wrong = from5186({ easting: point.longitude, northing: point.latitude });
+      const wrong = relabelledLocation(point);
       relabel.textContent = relabelOriginal ? 'You are viewing the incorrectly relabelled point. Restore to compare with the real transformation.' : `Relabelling would put this point at ${wrong.latitude.toFixed(4)}°N, ${wrong.longitude.toFixed(4)}°E instead of ${point.latitude.toFixed(4)}°N, ${point.longitude.toFixed(4)}°E.`;
       select('#relabel').textContent = relabelOriginal ? 'Restore correct location' : 'Try relabelling';
     }
@@ -232,6 +261,7 @@ function updateReadouts() {
 
 function navigate(nextLesson: number, nextStep?: number | 'quiz') {
   persist();
+  if (relabelOriginal) point = { ...relabelOriginal };
   lessonIndex = safeIndex(nextLesson, lessons.length);
   const remembered = resolvePosition(lessonIndex, positions);
   stepIndex = typeof nextStep === 'number' ? safeIndex(nextStep, lesson().steps.length) : nextStep === 'quiz' ? lesson().steps.length - 1 : remembered.step;
@@ -277,23 +307,32 @@ function bind() {
   });
   for (const axis of ['latitude', 'longitude'] as const) select(`#${axis}-range`).addEventListener('input', event => setPoint({ ...point, [axis]: Number((event.target as HTMLInputElement).value) }));
   select('#grid').addEventListener('change', event => { options.grid = (event.target as HTMLInputElement).checked; updateVisual(); });
+  select('#concept-diagram').addEventListener('click', event => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-projection-task]');
+    if (!button) return;
+    options.projection = button.dataset.projectionTask === 'area' ? 'equal-earth' : 'mercator';
+    options.circles = true;
+    const circles = app.querySelector<HTMLInputElement>('#circles');
+    if (circles) circles.checked = true;
+    updateReadouts(); updateVisual();
+  });
   app.querySelector('#circles')?.addEventListener('change', event => { options.circles = (event.target as HTMLInputElement).checked; updateVisual(); });
   app.querySelector('#ellipsoid')?.addEventListener('change', event => { options.ellipsoid = (event.target as HTMLInputElement).checked; updateVisual(); });
   app.querySelector('#view-toggle')?.addEventListener('click', () => { options.flat = !options.flat; updateVisual(); });
-  app.querySelector('#projection')?.addEventListener('change', event => { options.projection = (event.target as HTMLSelectElement).value; updateVisual(); });
+  app.querySelector('#projection')?.addEventListener('change', event => { options.projection = (event.target as HTMLSelectElement).value; updateReadouts(); updateVisual(); });
   app.querySelector('#axis-order')?.addEventListener('change', event => { axisOfficial = (event.target as HTMLInputElement).checked; updateReadouts(); });
   app.querySelector('#offsets')?.addEventListener('change', event => { showOffsets = (event.target as HTMLInputElement).checked; updateReadouts(); });
   select('#face').addEventListener('click', () => { worldView?.center(); koreaMap?.center(); });
   select('#reset-point').addEventListener('click', () => { relabelOriginal = null; setPoint({ ...defaultPoint() }); worldView?.center(); koreaMap?.center(); });
   app.querySelector('#relabel')?.addEventListener('click', () => {
     if (relabelOriginal) { const original = relabelOriginal; relabelOriginal = null; setPoint(original); }
-    else { const original = { ...point }; const wrong = from5186({ easting: point.longitude, northing: point.latitude }); relabelOriginal = original; setPoint(wrong); }
+    else { const original = { ...point }; const wrong = relabelledLocation(point); relabelOriginal = original; setPoint(wrong); }
     koreaMap?.center();
   });
   select('#restart').addEventListener('click', () => {
     for (const id of Object.keys(positions)) delete positions[id];
     for (const id of Object.keys(quizAnswers)) delete quizAnswers[id];
-    completed.clear(); point = { ...worldPresets.Greenwich }; lessonIndex = 0; stepIndex = 0; showQuiz = false; quizChoice = null; relabelOriginal = null;
+    completed.clear(); point = { ...worldPresets.Greenwich }; lessonIndex = 0; stepIndex = 0; showQuiz = false; quizChoice = null; relabelOriginal = null; configuredTopic = '';
     render(); select<HTMLElement>('#lesson').focus({ preventScroll: true }); window.scrollTo({ top: 0, behavior: 'instant' });
   });
   const dialog = select<HTMLDialogElement>('#sources-dialog');

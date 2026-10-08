@@ -6,6 +6,7 @@ export type ProjectedPoint = { easting: number; northing: number };
 // Proj4js uses conventional east/north arrays. Authority order is handled explicitly below.
 export const definition5186 = '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=600000 +ellps=GRS80 +towgs84=0,0,0 +units=m +no_defs';
 proj4.defs('EPSG:5186', definition5186);
+proj4.defs('EPSG:4737', '+proj=longlat +ellps=GRS80 +towgs84=0,0,0 +no_defs');
 
 export const presets: Record<string, GeographicPoint> = {
   Seoul: { longitude: 126.978, latitude: 37.5665 },
@@ -46,6 +47,14 @@ export function to5186(point: GeographicPoint): ProjectedPoint {
   const [easting, northing] = proj4('EPSG:4326', 'EPSG:5186', [point.longitude, point.latitude]);
   if (!Number.isFinite(easting) || !Number.isFinite(northing)) throw new Error('This position cannot be projected.');
   return { easting, northing };
+}
+
+export function toKGD2002(point: GeographicPoint): GeographicPoint {
+  validateGeographic(point);
+  const [longitude, latitude] = proj4('EPSG:4326', 'EPSG:4737', [point.longitude, point.latitude]);
+  const result = { longitude, latitude };
+  validateGeographic(result);
+  return result;
 }
 
 export function from5186(point: ProjectedPoint): GeographicPoint {

@@ -22,6 +22,18 @@ Verification after this navigation update: 36 tests passed, and TypeScript plus 
 
 ## Visualization responsibilities
 
+### Lesson-specific visual focus
+
+All seventeen teaching steps have explicit visual configurations in `src/lesson-visuals.ts`. The configuration supplies a short focus label, an observable cue, and initial settings for projection, distortion circles, and flattening. The original teaching titles are retained; explanations and prompts now refer to the actual diagrams.
+
+Defaults change on topic navigation, not on every control update. A previous step's distortion circles or exaggerated flattening do not leak into another topic. The origin lesson deliberately starts at the natural origin, then permits point selection and offset comparison.
+
+`src/visuals/concept-diagrams.ts` renders the supporting evidence for each topic. This includes the ellipsoid surface normal, matching globe/map views, CRS component relationships, longitude-distance bars, projection-task controls, colour-linked axis order, false-offset equations, the explicit EPSG:4737 geographic stage, and correct-versus-relabelled coordinates.
+
+Basic latitude/longitude lessons use `angle-measurements.ts` for spherical angle diagrams. These are distinct from the geodetic surface-normal illustration. Details and CRS definitions are always visible, without an expand/collapse button.
+
+The review, scientific distinctions, and seventeen-step visual matrix are in [course-review.md](course-review.md).
+
 ### World view
 
 `src/visuals/world-view.ts` uses D3 geo to draw Natural Earth geometry, graticules, selected parallels and meridians, and the selected point in SVG.
@@ -41,6 +53,10 @@ Worldwide presets include Greenwich, New Delhi, New York, Quito, Cape Town, Sydn
 `src/visuals/korea-map.ts` registers the EPSG:5186 definition through Proj4js and OpenLayers. The map's actual view coordinates are easting and northing in metres. Its 50 km grid is a projected-coordinate grid.
 
 Regional Natural Earth polygons, labelled city examples, the 127°E meridian, the natural origin, and a central-belt bounding rectangle provide context without a network basemap. Remote global polygons are excluded before projection to avoid far-side Transverse Mercator geometry.
+
+Map layers change emphasis with the topic. The origin view adds constant-easting/northing reference axes and ΔE/ΔN guides derived from real projected coordinates. The definition view labels the central meridian and scale factor. Direction indicators show easting/right and northing/up; view rotation is disabled to keep those indications correct.
+
+The assigning-versus-transforming view plots the correct and incorrectly relabelled positions together. Its dashed connector compares different locations, not a physical transformation route. Leaving the relabelling experiment restores the correct geographic point.
 
 The marker can be dragged. Clicking selects a location. Coordinate forms offer an alternative input. The map supports keyboard panning and zooming when focused. Map module loading is guarded so a delayed import cannot attach to a previous lesson's visualization.
 
@@ -100,6 +116,7 @@ Tests compare Proj4js results against these references within 1 mm of numerical 
 ## Checks performed
 
 - `npm test`: coordinate and DOM-level interaction checks.
+- After the course review: 74 tests passed. Added checks cover all seventeen visual bindings, geodetic surface normals, one-degree intervals, projected offset signs, interpreted metre values, conversion stages, and topic-specific DOM interactions.
 - `npm run build`: TypeScript and production build passed.
 - Dependency installation audit: zero known vulnerabilities at implementation time.
 - DOM-level interaction checks cover chapter navigation, invalid shared step input, projection selection, quizzes and completion, inverse coordinate entry, axis order, out-of-region input rejection, relabelling/restoration, source lists, and bundled documents.

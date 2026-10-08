@@ -145,4 +145,73 @@ describe('guided learning flow', () => {
     expect(Object.keys(progress.positions)).toEqual(['foundations']);
     expect(progress.completed).toEqual([]);
   });
+  it('changes the reference geometry and angle diagram for latitude and longitude lessons', () => {
+    click('[data-step="1"]');
+    expect(document.querySelector('.equator-line')?.classList.contains('reference-highlight')).toBe(true);
+    expect(document.querySelector('.longitude-line')).toBeNull();
+    expect(document.querySelector('.angle-measurement.longitude')).toBeNull();
+    click('[data-step="2"]');
+    expect(document.querySelector('.prime-line')?.classList.contains('reference-highlight')).toBe(true);
+    expect(document.querySelector('.latitude-line')).toBeNull();
+    expect(document.querySelector('.angle-measurement.latitude')).toBeNull();
+  });
+  it('shows the ellipsoid normal and retains visible lesson details', () => {
+    click('[data-step="3"]');
+    expect(document.querySelector('.earth-svg .sphere-outline')).not.toBeNull();
+    expect(document.querySelector('#concept-diagram .normal-line')).not.toBeNull();
+    expect((document.querySelector('#measurements') as HTMLElement).hidden).toBe(true);
+    expect(document.querySelector('.technical')?.tagName).toBe('SECTION');
+    expect(document.querySelector('.technical p')?.textContent).toContain('normal');
+  });
+  it('initializes distortion, then replaces it with an actual longitude interval and distance bars', () => {
+    click('[data-lesson="1"]');
+    click('[data-step="0"]');
+    expect((document.querySelector('#circles') as HTMLInputElement).checked).toBe(true);
+    expect(document.querySelectorAll('.distortion-circle').length).toBeGreaterThan(0);
+    click('[data-step="1"]');
+    expect((document.querySelector('#projection') as HTMLSelectElement).value).toBe('equirectangular');
+    expect(document.querySelector('.longitude-interval')?.getAttribute('d')).not.toBe('');
+    expect(document.querySelectorAll('.distortion-circle')).toHaveLength(0);
+    input('#latitude-range', '60');
+    document.querySelector('#latitude-range')!.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(document.querySelector('#degree-distance')?.textContent).toBe('55.8 km');
+    expect(document.querySelector('#concept-diagram')?.textContent).toContain('55.8 km');
+  });
+  it('links the measurement task to a suitable example projection', () => {
+    click('[data-step="2"]');
+    click('[data-projection-task="angles"]');
+    expect((document.querySelector('#projection') as HTMLSelectElement).value).toBe('mercator');
+    expect(document.querySelector('.earth-svg')?.textContent).toContain('MERCATOR');
+    click('[data-projection-task="area"]');
+    expect((document.querySelector('#projection') as HTMLSelectElement).value).toBe('equal-earth');
+  });
+  it('keeps field identity and geographic position while changing coordinate order', () => {
+    click('[data-lesson="2"]');
+    click('[data-step="1"]');
+    const latitude = (document.querySelector('#latitude') as HTMLInputElement).value;
+    const before = document.querySelector('.ordered-fields')?.textContent;
+    click('#axis-order');
+    expect(document.querySelector('.ordered-fields')?.textContent).not.toBe(before);
+    expect((document.querySelector('#latitude') as HTMLInputElement).value).toBe(latitude);
+  });
+  it('starts the origin lesson at its reference and removes offsets only in the explanation', () => {
+    click('[data-lesson="3"]');
+    click('[data-step="1"]');
+    expect(Number((document.querySelector('#easting') as HTMLInputElement).value)).toBeCloseTo(200000, 3);
+    expect(Number((document.querySelector('#northing') as HTMLInputElement).value)).toBeCloseTo(600000, 3);
+    click('#offsets');
+    expect(document.querySelector('#concept-diagram')?.textContent).toContain('Offsets removed');
+    expect(Number((document.querySelector('#easting') as HTMLInputElement).value)).toBeCloseTo(200000, 3);
+  });
+  it('shows all conversion stages and restores the real point when leaving the relabelling experiment', () => {
+    click('[data-lesson="4"]');
+    click('[data-step="0"]');
+    expect(document.querySelector('.conversion-flow')?.textContent).toContain('KGD2002 / 4737');
+    const latitude = (document.querySelector('#latitude') as HTMLInputElement).value;
+    click('[data-step="2"]');
+    expect(document.querySelector('#concept-diagram')?.textContent).toContain('Relabelled as metres');
+    click('#relabel');
+    click('[data-step="0"]');
+    expect((document.querySelector('#latitude') as HTMLInputElement).value).toBe(latitude);
+  });
 });
