@@ -15,8 +15,6 @@ import type { KoreaMap } from './visuals/korea-map';
 import research from '../docs/epsg-4326-and-5186-resources.md?raw';
 import article from '../docs/coordinate-reference-systems.md?raw';
 import plan from '../docs/build-plan.md?raw';
-import attribution from '../docs/README.md?raw';
-import courseReview from '../docs/course-review.md?raw';
 import implementation from '../docs/implementation.md?raw';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -43,7 +41,7 @@ let mountGeneration = 0;
 let options: WorldOptions = { flat: false, projection: 'equal-earth', circles: false, ellipsoid: false, grid: true, emphasis: 'both', focus: 'location' };
 let configuredTopic = '';
 let relabelOriginal: GeographicPoint | null = null;
-const docs = { research: { name: 'EPSG research & resources', text: research }, article: { name: 'QGIS article extraction', text: article }, plan: { name: 'Build plan & design', text: plan }, review: { name: 'Course review & visual plan', text: courseReview }, implementation: { name: 'Implementation & verification', text: implementation }, attribution: { name: 'Sources & attribution', text: attribution } };
+const docs = { research: { name: 'EPSG research & resources', text: research }, article: { name: 'QGIS article extraction', text: article }, plan: { name: 'Build plan & design', text: plan }, implementation: { name: 'Implementation & verification', text: implementation } };
 
 const arrow = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const logo = '<svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><circle cx="20" cy="20" r="16"/><ellipse cx="20" cy="20" rx="7" ry="16"/><ellipse cx="20" cy="20" rx="16" ry="6"/><path d="M4 20h32M20 4v32"/><circle cx="29" cy="13" r="3" class="logo-dot"/></svg>';
@@ -107,7 +105,7 @@ function render() {
   const isMap = current.mode === 'map';
   const percent = Math.round(completed.size / lessons.length * 100);
   app.innerHTML = `<header class="app-header">
-    <a class="brand" href="/" aria-label="Coordinate atlas home">${logo}<span>coordinate<span class="brand-light">atlas</span></span></a>
+    <a class="brand" href="${import.meta.env.BASE_URL}" aria-label="Coordinate atlas home">${logo}<span>coordinate<span class="brand-light">atlas</span></span></a>
     <button class="source-button" id="sources">Sources</button>
   </header>
   <div class="app-layout">

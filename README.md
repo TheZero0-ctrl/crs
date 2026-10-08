@@ -21,4 +21,4 @@ npm run build
 npm run preview
 ```
 
-Deploy `dist/` to a static host at its root path.
+The production build uses `/crs/`. GitHub Actions deploys `dist/` to GitHub Pages on pushes to `main`.
