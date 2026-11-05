@@ -2,6 +2,7 @@ import { lessons } from './lessons';
 
 export type LessonPosition = { step: number; quiz: boolean };
 export type LessonPositions = Record<string, LessonPosition>;
+type Chapters = readonly { id: string; steps: readonly unknown[] }[];
 
 // Navigation labels stay separate from the original teaching titles and text.
 export const topicLabels: Record<string, string[]> = {
@@ -16,10 +17,10 @@ export function safeIndex(value: unknown, count: number): number {
   return Number.isInteger(Number(value)) ? Math.max(0, Math.min(count - 1, Number(value))) : 0;
 }
 
-export function normalizePositions(value: unknown): LessonPositions {
+export function normalizePositions(value: unknown, chapters: Chapters = lessons): LessonPositions {
   const result: LessonPositions = {};
   if (!value || typeof value !== 'object') return result;
-  for (const lesson of lessons) {
+  for (const lesson of chapters) {
     const position = (value as Record<string, unknown>)[lesson.id];
     if (!position || typeof position !== 'object') continue;
     const candidate = position as Partial<LessonPosition>;
@@ -28,8 +29,8 @@ export function normalizePositions(value: unknown): LessonPositions {
   return result;
 }
 
-export function resolvePosition(lessonIndex: number, positions: LessonPositions, url?: URL, legacyStep?: unknown): LessonPosition {
-  const lesson = lessons[lessonIndex];
+export function resolvePosition(lessonIndex: number, positions: LessonPositions, url?: URL, legacyStep?: unknown, chapters: Chapters = lessons): LessonPosition {
+  const lesson = chapters[lessonIndex];
   const remembered = positions[lesson.id] ?? { step: safeIndex(legacyStep ?? 0, lesson.steps.length), quiz: false };
   if (!url) return remembered;
   return {

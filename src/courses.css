@@ -1,0 +1,46 @@
+.course-back{font-size:12px;color:var(--teal);text-decoration:underline;text-underline-offset:4px;line-height:1.6}
+.course-library{max-width:1200px;margin:0 auto;padding:70px 38px}
+.course-library>h1{margin:18px 0 16px;font-size:clamp(36px,5vw,62px)}
+.library-intro{max-width:690px;font-size:16px;line-height:1.8;color:#687164;margin:0 0 36px}
+.course-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px}
+.course-card{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:16px;padding:32px;background:var(--panel);min-width:0}
+.course-card>.eyebrow{color:var(--teal)}
+.course-card h2{font-size:29px;font-weight:500;letter-spacing:-.8px;margin:24px 0 12px}
+.course-card p{font-size:14px;line-height:1.8;color:#687164}
+.library-progress{margin-top:auto;padding-top:24px;font-size:11px;color:var(--muted)}
+.course-card .next-button{margin-top:24px;align-self:flex-start;min-height:44px}
+.course-label{color:var(--teal);margin-bottom:22px;display:block}
+.geojson-workspace{grid-template-columns:minmax(0,1fr) 260px}
+.geojson-map{width:100%;height:auto;background:#edf3e9;max-height:420px}
+.geojson-map.is-editable{touch-action:none;cursor:crosshair}
+.map-edit-hint{margin:0;padding:10px 20px;border-top:1px solid var(--line);font-size:11px;line-height:1.6;color:var(--teal)}
+.vertex-handle{cursor:grab}
+.vertex-hit{fill:transparent;pointer-events:all}
+.vertex-dot{fill:var(--panel);stroke:var(--teal);stroke-width:2}
+.vertex-handle.selected .vertex-dot{fill:var(--teal);stroke:var(--panel);stroke-width:2.5}
+.vertex-handle text{font-family:var(--mono);font-size:12px;fill:var(--ink);paint-order:stroke;stroke:var(--panel);stroke-width:3;pointer-events:none}
+@media(max-width:650px){.vertex-hit{r:50px}.vertex-dot{r:10px}.vertex-handle text{font-size:24px}}
+.geometry-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.geometry-actions .secondary-button{padding:10px 12px;min-height:44px}
+.extent-readout{display:block;font-family:var(--mono);font-size:11px;line-height:1.8;overflow-wrap:anywhere}
+.geojson-ocean{fill:#e3ece5}
+.geojson-point{fill:var(--orange);stroke:var(--panel);stroke-width:2}
+.geojson-line{fill:none;stroke:var(--orange);stroke-width:3;stroke-linejoin:round}
+.geojson-polygon{fill:#b65d3240;stroke:var(--orange);stroke-width:2}
+.geojson-bbox .geojson-polygon{fill:none;stroke:var(--teal);stroke-dasharray:7 5}
+.json-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 20px;border-top:1px solid var(--line)}
+.json-output,.json-editor{font-family:var(--mono);font-size:12px;line-height:1.8;background:#f8f8f2;color:var(--ink);tab-size:2}
+.json-output{padding:20px;margin:0;max-height:390px;overflow:auto;border-top:1px solid var(--line)}
+.json-editor{display:block;width:calc(100% - 40px);min-height:340px;resize:vertical;border:1px solid var(--line);border-radius:8px;margin:8px 20px;padding:16px;font-size:16px}
+.editor-label{display:block;margin:20px 20px 0;font-size:12px;color:var(--muted)}
+.exercise-check{margin:18px 20px}
+#exercise-feedback{font-size:13px;line-height:1.8;margin:16px 20px}
+.geojson-workspace .inspector p{font-size:12px;line-height:1.8;color:#687164}
+.geojson-workspace select{width:100%;min-height:44px;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:8px}
+.geojson-workspace .axis-box{display:flex;flex-direction:column;gap:10px}
+.geojson-workspace .axis-box code{overflow-wrap:anywhere;font-size:11px}
+.geojson-workspace #input-error{color:var(--orange)}
+.technical a{color:var(--teal);text-decoration:underline;text-underline-offset:3px}
+@media(max-width:1150px){.geojson-workspace{grid-template-columns:minmax(0,1fr) 230px}}
+@media(max-width:900px){.course-label{display:none}.geojson-workspace{grid-template-columns:minmax(0,1fr) 240px}.geojson-workspace .inspector{padding:18px}}
+@media(max-width:650px){.app-header{flex-wrap:wrap}.course-grid{grid-template-columns:1fr}.course-library{padding:35px 18px}.course-library>h1{font-size:38px}.course-card{padding:24px}.course-card h2{font-size:26px}.course-back{font-size:11px}.app-header .header-actions{gap:12px}.geojson-workspace{grid-template-columns:1fr}.json-output{font-size:11px;padding:16px}.json-heading{padding:10px 14px}.lesson-meta{gap:12px;align-items:flex-start}.lesson-meta .course-back{max-width:115px;text-align:right}.course-library .library-intro{font-size:14px}.geojson-workspace .inspector{padding:20px}}
